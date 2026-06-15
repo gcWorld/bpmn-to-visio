@@ -82,7 +82,15 @@ def parse_bpmn(bpmn_path):
         if local_tag in SHAPE_TYPES:
             elem_id = elem.get('id')
             elem_name = elem.get('name', '')
+            doc_text = ''
             event_def = ''
+            # BPMN documentation elements often contain description text
+            for child in elem:
+                child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                if child_tag == 'documentation' and child.text:
+                    doc_text = child.text.strip()
+                    break
+
             if local_tag == 'textAnnotation' and not elem_name:
                 # textAnnotation stores text in a child <text> element
                 for child in elem:
@@ -90,6 +98,14 @@ def parse_bpmn(bpmn_path):
                     if child_tag == 'text' and child.text:
                         elem_name = child.text
                         break
+
+            # If name is missing but documentation exists, use documentation as the label
+            if not elem_name and doc_text:
+                elem_name = doc_text
+            # If both exist, show name then documentation on a new line
+            elif elem_name and doc_text:
+                elem_name = f"{elem_name}\n{doc_text}"
+
             # Capture event definition type for intermediate events
             if local_tag in ('intermediateCatchEvent', 'intermediateThrowEvent',
                              'startEvent', 'endEvent', 'boundaryEvent'):
@@ -109,6 +125,17 @@ def parse_bpmn(bpmn_path):
             source = elem.get('sourceRef')
             target = elem.get('targetRef')
             name = elem.get('name', '')
+            doc_text = ''
+            for child in elem:
+                child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                if child_tag == 'documentation' and child.text:
+                    doc_text = child.text.strip()
+                    break
+            if not name and doc_text:
+                name = doc_text
+            elif name and doc_text:
+                name = f"{name}\n{doc_text}"
+
             if flow_id and source and target:
                 flows.append({'id': flow_id, 'sourceRef': source, 'targetRef': target,
                               'name': name, 'type': local_tag})
@@ -116,6 +143,17 @@ def parse_bpmn(bpmn_path):
         elif local_tag == 'participant':
             elem_id = elem.get('id')
             elem_name = elem.get('name', '')
+            doc_text = ''
+            for child in elem:
+                child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                if child_tag == 'documentation' and child.text:
+                    doc_text = child.text.strip()
+                    break
+            if not elem_name and doc_text:
+                elem_name = doc_text
+            elif elem_name and doc_text:
+                elem_name = f"{elem_name}\n{doc_text}"
+
             process_ref = elem.get('processRef', '')
             if elem_id:
                 elements[elem_id] = {'type': local_tag, 'name': elem_name}
@@ -125,6 +163,17 @@ def parse_bpmn(bpmn_path):
         elif local_tag == 'lane':
             elem_id = elem.get('id')
             elem_name = elem.get('name', '')
+            doc_text = ''
+            for child in elem:
+                child_tag = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+                if child_tag == 'documentation' and child.text:
+                    doc_text = child.text.strip()
+                    break
+            if not elem_name and doc_text:
+                elem_name = doc_text
+            elif elem_name and doc_text:
+                elem_name = f"{elem_name}\n{doc_text}"
+
             if elem_id:
                 elements[elem_id] = {'type': local_tag, 'name': elem_name}
 
